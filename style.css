@@ -79,12 +79,20 @@ body {
 /* ---------- Typography ---------- */
 .logo {
   font-family: 'Archivo Black', sans-serif;
-  font-size: clamp(48px, 16vw, 92px);
-  letter-spacing: -0.04em;
+  /* Sized so the wide PHOTOSTOR word always fits with breathing room
+     on iPhone widths (~390px) and scales up nicely on larger screens. */
+  font-size: clamp(38px, 13vw, 88px);
+  letter-spacing: -0.045em;
   line-height: 0.86;
   margin: 0;
   text-align: center;
   color: var(--ink);
+  max-width: 100%;
+  padding: 0 4px;
+  white-space: nowrap;
+  /* Final safety net: if the word would still overflow on an ultra-narrow
+     screen, shrink it to fit instead of clipping. */
+  font-stretch: 95%;
 }
 .logo-stor { color: var(--green); }
 .tagline {
