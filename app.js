@@ -82,6 +82,9 @@ const state = {
   lastRoundSeen: 0,        // for resetting per-round local UI
   lastPhaseSeen: null,
   pendingImage: null,
+  submitted: false,
+  libTab: 'category',     // 'category' | 'all'
+  libraryKey: null,
 };
 
 // ---------- Helpers ----------
@@ -378,6 +381,7 @@ $('btn-start').onclick = async () => {
 // ============================================================
 $('btn-to-submit').onclick = () => {
   show('screen-submit');
+  $('screen-submit').scrollTop = 0;
 };
 
 // ============================================================
@@ -396,18 +400,20 @@ $('file-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   try {
+    if (state.submitted) return;
     setPendingImage(await compressImage(file));
+    $('library-grid').querySelectorAll('.library-item.selected').forEach(el => el.classList.remove('selected'));
   } catch (err) {
     console.error(err);
     alert('Could not load that image. Try another.');
   }
 });
 
-// ---------- Photo library ----------
-// Library picks are stored as a relative path (e.g. "photos/volcano-1.jpg")
+// ---------- Photo library (the main way to submit) ----------
+// Library picks are stored as a relative path (e.g. "photos/abc123.jpg")
 // instead of a data URL, so they cost almost nothing in the Firestore doc.
-// The whole library is shown (not just the current category) so the
-// imposter can't narrow down the word from which photos appear.
+// Each category's pool is built from broad searches for that theme, not
+// just the secret words, so imposters can't read the word off the photos.
 function libraryPath(item) { return `photos/${item.file}`; }
 
 function takenByOthers(r) {
@@ -417,6 +423,12 @@ function takenByOthers(r) {
     .map(([, s]) => s.img));
 }
 
+function libraryItems(r) {
+  if (state.libTab === 'all') return PHOTO_LIBRARY;
+  const inCategory = PHOTO_LIBRARY.filter(p => p.category === r?.currentCategory);
+  return inCategory.length ? inCategory : PHOTO_LIBRARY;
+}
+
 function renderLibrary() {
   const r = state.room;
   const grid = $('library-grid');
@@ -424,7 +436,7 @@ function renderLibrary() {
   const taken = takenByOthers(r);
   // Fresh order per player per round, so nobody's library looks the same.
   const seed = `${r?.code}:${r?.round || 0}:${state.playerId}`;
-  shuffleSeeded(PHOTO_LIBRARY, seed).forEach(item => {
+  shuffleSeeded(libraryItems(r), seed).forEach(item => {
     const path = libraryPath(item);
     const btn = document.createElement('button');
     btn.className = 'library-item';
@@ -434,31 +446,49 @@ function renderLibrary() {
     btn.classList.toggle('selected', state.pendingImage === path);
     btn.innerHTML = `<img src="${path}" alt="" loading="lazy" decoding="async" />`;
     btn.onclick = () => {
+      if (state.submitted) return;
       setPendingImage(path);
-      closeLibrary();
+      grid.querySelectorAll('.library-item.selected').forEach(el => el.classList.remove('selected'));
+      btn.classList.add('selected');
     };
     grid.appendChild(btn);
   });
 }
 
-// Snapshot updates only flip "taken" flags, so the grid keeps its scroll spot.
-function refreshLibraryTaken() {
-  const taken = takenByOthers(state.room);
+// Rebuild only when the round/category/tab changes; otherwise just flip
+// "taken" flags so the grid keeps its scroll spot between snapshots.
+function syncLibrary() {
+  const r = state.room;
+  const key = `${r?.code}:${r?.round}:${r?.currentCategory}:${state.libTab}`;
+  if (key !== state.libraryKey) {
+    state.libraryKey = key;
+    renderLibrary();
+    return;
+  }
+  const taken = takenByOthers(r);
   $('library-grid').querySelectorAll('.library-item').forEach(btn => {
     btn.disabled = taken.has(btn.dataset.path);
     btn.classList.toggle('taken', btn.disabled);
   });
 }
 
-function openLibrary() {
-  renderLibrary();
-  $('library-sheet').hidden = false;
-  $('library-grid').scrollTop = 0;
+// Lock the picker once I've submitted (also restores the state after a rejoin).
+function syncSubmitted() {
+  const mine = (state.room?.submissions || {})[state.playerId];
+  state.submitted = !!mine;
+  if (mine && state.pendingImage !== mine.img) setPendingImage(mine.img);
+  $('screen-submit').classList.toggle('is-submitted', state.submitted);
+  $('submit-waiting').hidden = !state.submitted;
+  $('btn-submit-image').disabled = state.submitted || !state.pendingImage;
 }
-function closeLibrary() { $('library-sheet').hidden = true; }
 
-$('btn-open-library').onclick = openLibrary;
-$('btn-close-library').onclick = closeLibrary;
+document.querySelectorAll('#lib-tabs .seg-btn').forEach(b => {
+  b.onclick = () => {
+    state.libTab = b.dataset.lib;
+    document.querySelectorAll('#lib-tabs .seg-btn').forEach(x => x.classList.toggle('active', x === b));
+    syncLibrary();
+  };
+});
 
 $('btn-submit-image').onclick = async () => {
   if (!state.pendingImage) return;
@@ -472,7 +502,6 @@ $('btn-submit-image').onclick = async () => {
       [`submissions.${state.playerId}`]: { img: state.pendingImage, name: state.playerName }
     });
     $('submit-waiting').hidden = false;
-    $('btn-open-library').disabled = true;
   } catch (e) {
     console.error(e);
     alert('Submit failed — the image may be too large. Try a different photo.');
@@ -582,9 +611,10 @@ function resetLocalUI() {
   $('upload-zone').classList.remove('has-image');
   $('submit-waiting').hidden = true;
   $('btn-submit-image').disabled = true;
-  $('btn-open-library').disabled = false;
   $('vote-waiting').hidden = true;
-  closeLibrary();
+  state.submitted = false;
+  $('screen-submit').classList.remove('is-submitted');
+  $('library-grid').querySelectorAll('.library-item.selected').forEach(el => el.classList.remove('selected'));
 }
 
 // ============================================================
@@ -822,9 +852,11 @@ function render() {
       break;
   }
 
-  // Library sheet only makes sense on the submit screen; keep "taken" state live.
-  if (!isOn('screen-submit')) closeLibrary();
-  else if (!$('library-sheet').hidden) refreshLibraryTaken();
+  // Keep the photo library + submitted state live while picking.
+  if (r.phase === 'reveal' || r.phase === 'submit') {
+    syncLibrary();
+    syncSubmitted();
+  }
 
   // Submission progress visible during reveal/submit
   if ((r.phase === 'reveal' || r.phase === 'submit') && !iAmEliminated) {

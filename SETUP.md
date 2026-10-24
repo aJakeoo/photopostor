@@ -38,7 +38,7 @@ A photo-based social deduction game. Everyone plays on their own phone. Imposter
 2. Everyone else taps Join Room and enters the code + their name.
 3. Host picks **1–3 imposters** (optionally enables test mode), then Start.
 4. Each phone reveals: **green word** for innocents, **red "IMPOSTER"** for imposters.
-5. Everyone finds a photo and submits it.
+5. Everyone picks a photo from the library (or uploads their own) and submits it.
 6. Photos appear for all. **Talk it out in person.**
 7. Host opens the vote.
 8. Round result: either someone's eliminated (and becomes a spectator) or the vote was tied.
@@ -50,16 +50,18 @@ A photo-based social deduction game. Everyone plays on their own phone. Imposter
 
 ## Photo library
 
-On the submit screen, players can tap **Browse Photo Library** instead of uploading their own photo.
+The photo library is the main way to submit. The submit screen opens straight onto a grid of photos, and uploading your own is a small link underneath.
 
-- The whole library is shown (shuffled per player, per round), not just the current category, so imposters can't work out the word from what's on offer.
-- Once a player submits a library photo, it shows as faded/taken for everyone else that round. No duplicate picks.
+- **This category** (default) shows 25+ photos for the round's category. Each pool is built from broad searches on the theme, not just the secret words, so the imposter can't work out the word from what's on offer.
+- **All photos** shows the whole library.
+- Each player gets their own shuffled order every round.
+- Once a player submits a library photo, it fades out for everyone else that round. No duplicate picks.
 - Library picks are saved as a short file path, not image data, so they barely touch Firestore.
 
-**Adding your own photos:** drop a JPG (around 640px is plenty) into `photos/` and add a line to `photos/library.js`:
+**Adding your own photos:** drop a JPG (around 640px is plenty) into `photos/` and add a line to `photos/library.js`, using a category name from the word bank in `app.js`:
 
 ```js
-{ file: "my-photo.jpg" },
+{ file: "my-photo.jpg", category: "Ocean & Water" },
 ```
 
 The starter set is public-domain/CC0 photos from Openverse. Sources are in `photos/CREDITS.md`.
