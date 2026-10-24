@@ -52,9 +52,9 @@ A photo-based social deduction game. Everyone plays on their own phone. Imposter
 
 The photo library is the main way to submit. The submit screen opens straight onto a grid of photos, and uploading your own is a small link underneath.
 
-- **This category** (default) shows 25+ photos for the round's category. Each pool is built from broad searches on the theme, not just the secret words, so the imposter can't work out the word from what's on offer.
-- **All photos** shows the whole library.
-- Each player gets their own shuffled order every round.
+- **Every player is dealt their own random photos each round:** 12 from the round's category, or 24 from the whole library on the **All photos** tab. Different players see different options.
+- **↻ show me different photos** deals a fresh random hand if nothing fits.
+- Each category's pool is built from broad searches on the theme, not just the secret words, so the imposter can't work out the word from what's on offer.
 - Once a player submits a library photo, it fades out for everyone else that round. No duplicate picks.
 - Library picks are saved as a short file path, not image data, so they barely touch Firestore.
 

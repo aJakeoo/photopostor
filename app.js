@@ -85,6 +85,7 @@ const state = {
   submitted: false,
   libTab: 'category',     // 'category' | 'all'
   libraryKey: null,
+  libShuffles: 0,         // bumps when the player asks for new options
 };
 
 // ---------- Helpers ----------
@@ -423,10 +424,19 @@ function takenByOthers(r) {
     .map(([, s]) => s.img));
 }
 
+// Each player is dealt their own random hand of photos every round, so
+// players see different options. Seeded by room/round/player (+ reshuffles)
+// so the hand stays put across snapshots and survives a rejoin.
+const HAND_SIZE = { category: 12, all: 24 };
 function libraryItems(r) {
-  if (state.libTab === 'all') return PHOTO_LIBRARY;
   const inCategory = PHOTO_LIBRARY.filter(p => p.category === r?.currentCategory);
-  return inCategory.length ? inCategory : PHOTO_LIBRARY;
+  const pool = state.libTab === 'all' || !inCategory.length ? PHOTO_LIBRARY : inCategory;
+  const seed = `${r?.code}:${r?.round || 0}:${state.playerId}:${state.libTab}:${state.libShuffles}`;
+  const hand = shuffleSeeded(pool, seed).slice(0, HAND_SIZE[state.libTab]);
+  // Keep my current pick visible even if a reshuffle would drop it.
+  const picked = PHOTO_LIBRARY.find(p => libraryPath(p) === state.pendingImage);
+  if (picked && !hand.includes(picked)) hand[0] = picked;
+  return hand;
 }
 
 function renderLibrary() {
@@ -434,9 +444,7 @@ function renderLibrary() {
   const grid = $('library-grid');
   grid.innerHTML = '';
   const taken = takenByOthers(r);
-  // Fresh order per player per round, so nobody's library looks the same.
-  const seed = `${r?.code}:${r?.round || 0}:${state.playerId}`;
-  shuffleSeeded(libraryItems(r), seed).forEach(item => {
+  libraryItems(r).forEach(item => {
     const path = libraryPath(item);
     const btn = document.createElement('button');
     btn.className = 'library-item';
@@ -459,7 +467,7 @@ function renderLibrary() {
 // "taken" flags so the grid keeps its scroll spot between snapshots.
 function syncLibrary() {
   const r = state.room;
-  const key = `${r?.code}:${r?.round}:${r?.currentCategory}:${state.libTab}`;
+  const key = `${r?.code}:${r?.round}:${r?.currentCategory}:${state.libTab}:${state.libShuffles}`;
   if (key !== state.libraryKey) {
     state.libraryKey = key;
     renderLibrary();
@@ -481,6 +489,12 @@ function syncSubmitted() {
   $('submit-waiting').hidden = !state.submitted;
   $('btn-submit-image').disabled = state.submitted || !state.pendingImage;
 }
+
+$('btn-shuffle').onclick = () => {
+  if (state.submitted) return;
+  state.libShuffles++;
+  syncLibrary();
+};
 
 document.querySelectorAll('#lib-tabs .seg-btn').forEach(b => {
   b.onclick = () => {
@@ -613,6 +627,7 @@ function resetLocalUI() {
   $('btn-submit-image').disabled = true;
   $('vote-waiting').hidden = true;
   state.submitted = false;
+  state.libShuffles = 0;
   $('screen-submit').classList.remove('is-submitted');
   $('library-grid').querySelectorAll('.library-item.selected').forEach(el => el.classList.remove('selected'));
 }
