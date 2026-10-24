@@ -141,6 +141,8 @@
         <img class="upload-preview" id="upload-preview" hidden alt="your selection" />
       </label>
 
+      <button class="btn btn-ghost btn-library" id="btn-open-library">BROWSE PHOTO LIBRARY</button>
+
       <button class="btn btn-primary" id="btn-submit-image" disabled>SUBMIT</button>
       <p class="waiting-note" id="submit-waiting" hidden>submitted! waiting for others…</p>
       <div class="submit-progress" id="submit-progress" hidden></div>
@@ -209,6 +211,16 @@
     </section>
 
   </main>
+
+  <!-- ============ PHOTO LIBRARY (sheet over the submit screen) ============ -->
+  <div class="library-sheet" id="library-sheet" hidden>
+    <div class="library-head">
+      <h2 class="library-title">PHOTO LIBRARY</h2>
+      <button class="library-close" id="btn-close-library" aria-label="Close library">✕</button>
+    </div>
+    <p class="submit-hint">Tap a photo to use it. Faded photos are already taken this round.</p>
+    <div class="library-grid" id="library-grid"></div>
+  </div>
 
   <script type="module" src="app.js"></script>
 </body>

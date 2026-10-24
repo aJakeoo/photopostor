@@ -4,6 +4,7 @@
 // ============================================================
 
 import { firebaseConfig } from './firebase-config.js';
+import { PHOTO_LIBRARY } from './photos/library.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
   getFirestore, doc, setDoc, updateDoc, onSnapshot, runTransaction,
@@ -382,31 +383,96 @@ $('btn-to-submit').onclick = () => {
 // ============================================================
 //  SUBMIT IMAGE (with playtest fix for placeholder bleed)
 // ============================================================
+function setPendingImage(src) {
+  state.pendingImage = src;
+  const prev = $('upload-preview');
+  prev.src = src;
+  prev.hidden = false;
+  $('upload-zone').classList.add('has-image'); // hides placeholder via CSS
+  $('btn-submit-image').disabled = false;
+}
+
 $('file-input').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
   try {
-    const dataUrl = await compressImage(file);
-    state.pendingImage = dataUrl;
-    const prev = $('upload-preview');
-    prev.src = dataUrl;
-    prev.hidden = false;
-    $('upload-zone').classList.add('has-image'); // hides placeholder via CSS
-    $('btn-submit-image').disabled = false;
+    setPendingImage(await compressImage(file));
   } catch (err) {
     console.error(err);
     alert('Could not load that image. Try another.');
   }
 });
 
+// ---------- Photo library ----------
+// Library picks are stored as a relative path (e.g. "photos/volcano-1.jpg")
+// instead of a data URL, so they cost almost nothing in the Firestore doc.
+// The whole library is shown (not just the current category) so the
+// imposter can't narrow down the word from which photos appear.
+function libraryPath(item) { return `photos/${item.file}`; }
+
+function takenByOthers(r) {
+  const subs = (r && r.submissions) || {};
+  return new Set(Object.entries(subs)
+    .filter(([id]) => id !== state.playerId)
+    .map(([, s]) => s.img));
+}
+
+function renderLibrary() {
+  const r = state.room;
+  const grid = $('library-grid');
+  grid.innerHTML = '';
+  const taken = takenByOthers(r);
+  // Fresh order per player per round, so nobody's library looks the same.
+  const seed = `${r?.code}:${r?.round || 0}:${state.playerId}`;
+  shuffleSeeded(PHOTO_LIBRARY, seed).forEach(item => {
+    const path = libraryPath(item);
+    const btn = document.createElement('button');
+    btn.className = 'library-item';
+    btn.dataset.path = path;
+    btn.disabled = taken.has(path);
+    btn.classList.toggle('taken', btn.disabled);
+    btn.classList.toggle('selected', state.pendingImage === path);
+    btn.innerHTML = `<img src="${path}" alt="" loading="lazy" decoding="async" />`;
+    btn.onclick = () => {
+      setPendingImage(path);
+      closeLibrary();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// Snapshot updates only flip "taken" flags, so the grid keeps its scroll spot.
+function refreshLibraryTaken() {
+  const taken = takenByOthers(state.room);
+  $('library-grid').querySelectorAll('.library-item').forEach(btn => {
+    btn.disabled = taken.has(btn.dataset.path);
+    btn.classList.toggle('taken', btn.disabled);
+  });
+}
+
+function openLibrary() {
+  renderLibrary();
+  $('library-sheet').hidden = false;
+  $('library-grid').scrollTop = 0;
+}
+function closeLibrary() { $('library-sheet').hidden = true; }
+
+$('btn-open-library').onclick = openLibrary;
+$('btn-close-library').onclick = closeLibrary;
+
 $('btn-submit-image').onclick = async () => {
   if (!state.pendingImage) return;
+  if (takenByOthers(state.room).has(state.pendingImage)) {
+    alert('Someone just grabbed that photo — pick another one.');
+    return;
+  }
   $('btn-submit-image').disabled = true;
   try {
     await updateDoc(roomRef(state.roomCode), {
       [`submissions.${state.playerId}`]: { img: state.pendingImage, name: state.playerName }
     });
     $('submit-waiting').hidden = false;
+    $('btn-open-library').disabled = true;
   } catch (e) {
     console.error(e);
     alert('Submit failed — the image may be too large. Try a different photo.');
@@ -516,7 +582,9 @@ function resetLocalUI() {
   $('upload-zone').classList.remove('has-image');
   $('submit-waiting').hidden = true;
   $('btn-submit-image').disabled = true;
+  $('btn-open-library').disabled = false;
   $('vote-waiting').hidden = true;
+  closeLibrary();
 }
 
 // ============================================================
@@ -753,6 +821,10 @@ function render() {
       show('screen-results');
       break;
   }
+
+  // Library sheet only makes sense on the submit screen; keep "taken" state live.
+  if (!isOn('screen-submit')) closeLibrary();
+  else if (!$('library-sheet').hidden) refreshLibraryTaken();
 
   // Submission progress visible during reveal/submit
   if ((r.phase === 'reveal' || r.phase === 'submit') && !iAmEliminated) {

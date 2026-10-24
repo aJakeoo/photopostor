@@ -28,6 +28,7 @@ A photo-based social deduction game. Everyone plays on their own phone. Imposter
 | `firebase-config.js` | **Your Firebase keys** | ✅ |
 | `manifest.json` | Add-to-Home-Screen settings | optional |
 | `icon-192.png`, `icon-512.png` | App icons | optional |
+| `photos/` | **Photo library** players can pick from | to add photos |
 
 ---
 
@@ -44,6 +45,24 @@ A photo-based social deduction game. Everyone plays on their own phone. Imposter
 9. Host hits "Next Round" — new word, same imposters.
 10. Session ends when all imposters are out (**innocents win**) or 3 rounds pass with any imposter still alive (**imposters win**).
 11. "New Session" returns everyone to the lobby with re-randomized imposters.
+
+---
+
+## Photo library
+
+On the submit screen, players can tap **Browse Photo Library** instead of uploading their own photo.
+
+- The whole library is shown (shuffled per player, per round), not just the current category, so imposters can't work out the word from what's on offer.
+- Once a player submits a library photo, it shows as faded/taken for everyone else that round. No duplicate picks.
+- Library picks are saved as a short file path, not image data, so they barely touch Firestore.
+
+**Adding your own photos:** drop a JPG (around 640px is plenty) into `photos/` and add a line to `photos/library.js`:
+
+```js
+{ file: "my-photo.jpg" },
+```
+
+The starter set is public-domain/CC0 photos from Openverse. Sources are in `photos/CREDITS.md`.
 
 ---
 
