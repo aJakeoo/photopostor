@@ -1126,8 +1126,8 @@ async function attemptRejoin({ silent = true } = {}) {
     hint.style.cssText = `
       position: fixed; top: max(20px, env(safe-area-inset-top)); left: 50%;
       transform: translateX(-50%); z-index: 100;
-      background: rgba(13,15,14,0.85); border: 1px solid var(--amber, #ffc24b);
-      color: var(--amber, #ffc24b); padding: 8px 14px; border-radius: 999px;
+      background: rgba(255,255,255,0.92); border: 1px solid var(--amber-line, #e0a631);
+      color: var(--amber, #8a5a00); padding: 8px 14px; border-radius: 999px;
       font-family: 'Space Mono', monospace; font-size: 12px;
       backdrop-filter: blur(8px);
     `;
@@ -1173,8 +1173,8 @@ async function attemptRejoin({ silent = true } = {}) {
     console.warn('rejoin failed:', e);
     if (hint) {
       hint.textContent = 'could not reconnect — start fresh';
-      hint.style.borderColor = 'var(--red, #ff4d4d)';
-      hint.style.color = 'var(--red, #ff4d4d)';
+      hint.style.borderColor = 'var(--red, #b42323)';
+      hint.style.color = 'var(--red, #b42323)';
       setTimeout(() => hint.remove(), 2500);
     } else {
       // manual rejoin failure: brief inline error

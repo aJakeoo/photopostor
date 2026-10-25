@@ -1,22 +1,25 @@
 /* ============================================================
-   PHOTOSTOR — STYLE
-   Industrial / interrogation-room aesthetic.
+   PHOTOSTOR — STYLE (light theme)
+   Clean, bright game-night look on a pale grey-green ground.
    Green = innocent/word. Red = imposter/danger.
    ============================================================ */
 
 :root {
-  --bg:        #0d0f0e;
-  --bg-2:      #151917;
-  --panel:     #1b211e;
-  --panel-2:   #232b27;
-  --line:      #34403a;
-  --ink:       #eef2ef;
-  --ink-dim:   #8c968f;
-  --green:     #3ddc84;
-  --green-deep:#0f3d24;
-  --red:       #ff4d4d;
-  --red-deep:  #3d0f0f;
-  --amber:     #ffc24b;
+  --bg:        #f2f4f1;
+  --bg-2:      #e8ece8;
+  --panel:     #ffffff;
+  --panel-2:   #e8ece8;
+  --line:      #d3dad5;
+  --ink:       #141815;
+  --ink-dim:   #56615a;
+  --green:     #127a45;   /* text + button fill (white text on it) */
+  --green-deep:#e2f3e9;   /* green tint behind selected things */
+  --green-shadow:#0c5a33; /* the 3D ledge under primary buttons */
+  --red:       #b42323;
+  --red-deep:  #fcebea;
+  --amber:     #8a5a00;   /* text/borders; readable on light */
+  --amber-soft:#fff4dc;
+  --amber-line:#e0a631;
   --radius:    14px;
   --tap:       58px;
 }
@@ -38,7 +41,7 @@ html, body {
 
 body {
   background:
-    radial-gradient(120% 80% at 50% -10%, #1c2420 0%, var(--bg) 55%),
+    radial-gradient(120% 80% at 50% -10%, #ffffff 0%, var(--bg) 55%),
     var(--bg);
   -webkit-user-select: none;
   user-select: none;
@@ -49,7 +52,7 @@ body {
   inset: 0;
   pointer-events: none;
   z-index: 9999;
-  opacity: 0.05;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -127,7 +130,7 @@ body {
 .reveal-card .category-chip {
   display: inline-block;
   margin: 4px auto 0;
-  background: rgba(0,0,0,0.25);
+  background: var(--panel);
 }
 
 /* ---------- Round badge ---------- */
@@ -136,7 +139,8 @@ body {
   font-size: 11px;
   letter-spacing: 0.3em;
   color: var(--amber);
-  border: 1px solid var(--amber);
+  border: 1px solid var(--amber-line);
+  background: var(--amber-soft);
   border-radius: 999px;
   padding: 5px 12px;
 }
@@ -181,10 +185,10 @@ body {
 .btn:active { transform: scale(0.97); }
 .btn-primary {
   background: var(--green);
-  color: #05140b;
-  box-shadow: 0 6px 0 var(--green-deep);
+  color: #ffffff;
+  box-shadow: 0 6px 0 var(--green-shadow);
 }
-.btn-primary:active { box-shadow: 0 2px 0 var(--green-deep); transform: translateY(3px) scale(.99); }
+.btn-primary:active { box-shadow: 0 2px 0 var(--green-shadow); transform: translateY(3px) scale(.99); }
 .btn-primary:disabled {
   background: var(--panel-2);
   color: var(--ink-dim);
@@ -199,12 +203,13 @@ body {
 .btn-rejoin {
   background: transparent;
   color: var(--amber);
-  border: 2px solid var(--amber);
-  box-shadow: 0 0 30px rgba(255, 194, 75, 0.15);
+  border: 2px solid var(--amber-line);
+  background: var(--amber-soft);
+  box-shadow: none;
   letter-spacing: 0.05em;
 }
 .btn-rejoin:active {
-  background: rgba(255, 194, 75, 0.08);
+  background: #ffecc0;
   transform: scale(0.97);
 }
 .btn-rejoin #btn-rejoin-code {
@@ -297,7 +302,7 @@ body {
   color: var(--green);
   line-height: 1;
   margin-top: 6px;
-  text-shadow: 0 0 30px rgba(61,220,132,.25);
+  text-shadow: none;
 }
 .players-block {
   width: 100%;
@@ -399,8 +404,8 @@ body {
   margin-top: 2px;
 }
 .toggle-row input[type="checkbox"]:checked {
-  background: var(--amber);
-  border-color: var(--amber);
+  background: var(--amber-line);
+  border-color: var(--amber-line);
 }
 .toggle-row input[type="checkbox"]:checked::after {
   content: "✓";
@@ -456,12 +461,12 @@ body {
   text-align: center;
   border: 2px solid var(--green);
   background: linear-gradient(160deg, var(--green-deep), var(--panel));
-  box-shadow: 0 0 60px rgba(61,220,132,.18);
+  box-shadow: 0 10px 30px rgba(18,122,69,.12);
 }
 .reveal-card.imposter {
   border-color: var(--red);
   background: linear-gradient(160deg, var(--red-deep), var(--panel));
-  box-shadow: 0 0 60px rgba(255,77,77,.22);
+  box-shadow: 0 10px 30px rgba(180,35,35,.14);
 }
 .reveal-eyebrow {
   font-family: 'Space Mono', monospace;
@@ -629,7 +634,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 12px 0 max(16px, env(safe-area-inset-bottom));
-  background: linear-gradient(to bottom, transparent, var(--bg) 30%);
+  background: linear-gradient(to bottom, rgba(242, 244, 241, 0), var(--bg) 30%);
   margin-top: auto;
 }
 .is-submitted .library-block { opacity: 0.35; pointer-events: none; }
@@ -666,7 +671,7 @@ body {
   padding: 18px 10px 8px;
   font-weight: 800;
   font-size: 14px;
-  color: var(--ink);
+  color: #ffffff;
   /* Gradient backdrop so the name is readable over any photo */
   background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0) 100%);
   text-shadow: 0 1px 3px rgba(0,0,0,0.7);
@@ -766,7 +771,7 @@ body {
   gap: 10px;
   padding: 16px;
   background: var(--panel);
-  border: 1px solid var(--amber);
+  border: 1px solid var(--amber-line);
   border-radius: var(--radius);
 }
 .spec-host-note {
